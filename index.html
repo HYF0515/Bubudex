@@ -324,7 +324,7 @@ body.locked .app{grid-template-columns:minmax(0,1fr)}
 .donut-leg .list-row{padding:6px 0}
 /* riquadri richiudibili */
 section.panel.foldable{position:relative}
-section.panel.foldable>.panel-h{padding-right:34px}
+section.panel.foldable>.panel-h{padding-right:34px;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 .fold-btn{position:absolute;top:13px;right:10px;width:30px;height:30px;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}
 .fold-btn:hover{background:var(--surface-2);color:var(--fg)}
 .fold-btn svg{transition:transform .2s ease}
@@ -416,7 +416,7 @@ html{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%}
 <script>
 (() => {
 "use strict";
-const APP_VERSION = '66';
+const APP_VERSION = '67';
 /* ---------- utilità ---------- */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -2191,6 +2191,8 @@ async function deleteDemo(btn) {
 
 /* ---------- eventi ---------- */
 document.addEventListener('click', e => {
+  // tocco sull'intestazione di un riquadro (fuori da pulsanti e campi): apre o chiude il riquadro
+  if (!e.target.closest('[data-act],a,button,input,select,textarea,label')) { const h = e.target.closest('section.panel.foldable > .panel-h'); if (h) { h.querySelector(':scope > .fold-btn')?.click(); return; } }
   const t = e.target.closest('[data-act]'); if (!t) return;
   const a = t.dataset.act, id = t.dataset.id;
   if (a === 'close') { if (e.target.closest('#modal')) closeModal(); return; }
