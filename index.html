@@ -416,7 +416,7 @@ html{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%}
 <script>
 (() => {
 "use strict";
-const APP_VERSION = '68';
+const APP_VERSION = '69';
 /* ---------- utilità ---------- */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -2263,11 +2263,11 @@ document.addEventListener('change', async e => {
     const v = el.value.trim() === '' ? 0 : parseNum(el.value);
     if (isNaN(v) || v < 0) { toast('Inserisci un importo valido.', true); return; }
     const ym = S.ui.budgetMonth, cid = el.dataset.budget;
-    if (monthBudget(cid, ym) === v && (el.value.trim() !== '' || !hasMonthOverride(cid, ym))) return;
+    if (monthBudget(cid, ym) === v) return;
+    // casella vuota = nessun budget per questo mese (non torna al predefinito)
     const all = { ...(S.settings.budgetsMonth || {}) }, m = { ...(all[ym] || {}) };
-    if (el.value.trim() === '') delete m[cid]; else m[cid] = v;
-    if (Object.keys(m).length) all[ym] = m; else delete all[ym];
-    if (await saveSettings({ budgetsMonth: all })) toast(el.value.trim() === '' ? 'Budget del mese rimosso: uso il predefinito' : 'Budget di ' + ymLabel(ym).toLowerCase() + ' aggiornato');
+    m[cid] = v; all[ym] = m;
+    if (await saveSettings({ budgetsMonth: all })) toast(v ? 'Budget di ' + ymLabel(ym).toLowerCase() + ' aggiornato' : 'Budget di ' + ymLabel(ym).toLowerCase() + ' tolto');
   }
   else if (el.id === 'restore-file' && el.files[0]) { restore(el.files[0]); el.value = ''; }
   else if (el.id === 'imp-file' && el.files[0]) impLoadFile(el.files[0]);
