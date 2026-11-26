@@ -416,7 +416,7 @@ html{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%}
 <script>
 (() => {
 "use strict";
-const APP_VERSION = '67';
+const APP_VERSION = '68';
 /* ---------- utilità ---------- */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -1360,7 +1360,6 @@ VIEWS.budget = () => {
   <div class="head with-nav"><div><div class="eyebrow"><span class="lbl-long">Budget mensile</span><span class="lbl-short">Budget</span></div><h1>${ymLabel(ym)}</h1></div><div class="head-actions">${eyeBtn()}${monthNav('budgetMonth')}</div></div>
   <div class="budget-mode-row">${budgetModeSeg()}</div>
   ${heroCard('Budget del mese', money0(totB), [['Entrate', 'in', money0(st.inc), 'pos'], ['Speso', 'out', money0(totS), 'neg'], ['Disponibile', 'sav', money0(totB - totS), totB - totS < 0 ? 'neg' : ''], [isCur ? 'Proiezione' : 'Speso mese', 'neu', money0(projected), totB && projected > totB ? 'neg' : '']])}
-  <div class="prop-actions"><button class="btn small" data-act="budget-copy">Copia da un altro mese</button><button class="btn small" data-act="budget-default">Usa come predefiniti</button></div>
   <section class="panel"><div class="panel-h"><h2>Per categoria</h2></div>
     ${cats.length ? `<div class="tbl-wrap"><table><thead><tr><th>Categoria</th><th class="r">Budget</th><th class="r">Speso</th><th class="r">Residuo</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="empty"><p>Crea prima le categorie di spesa nelle impostazioni.</p><a class="btn" href="#impostazioni">Vai alle impostazioni</a></div>`}
   </section>`;
@@ -1726,34 +1725,6 @@ function unusedCategories() {
   return S.categories.filter(c => !used.has(c.id)).sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name, 'it'));
 }
 // Copia nel mese selezionato i budget (o la spesa effettiva) di un altro mese
-function budgetCopyForm() {
-  const ym = S.ui.budgetMonth;
-  const first = S.transactions.reduce((m, t) => t.date && t.date.slice(0, 7) < m ? t.date.slice(0, 7) : m, addMonths(ym, -12));
-  const opts = []; for (let x = addMonths(ym, 12); x >= first; x = addMonths(x, -1)) if (x !== ym) opts.push({ v: x, l: ymLabel(x) + (x === addMonths(ym, -1) ? ' (mese precedente)' : x === addMonths(ym, -12) ? ' (stesso mese, anno prima)' : '') });
-  openForm({
-    title: 'Copia in ' + ymLabel(ym).toLowerCase(),
-    intro: `<p class="muted" style="margin:0;font-size:.88rem">Imposto il budget di ogni categoria di spesa di ${esc(ymLabel(ym).toLowerCase())} copiando da un altro mese. Dopo puoi correggere le singole voci.</p>`,
-    fields: [
-      { id: 'from', label: 'Da quale mese', type: 'select', value: addMonths(ym, -1), options: opts },
-      { id: 'what', type: 'seg', label: 'Cosa copiare', value: 'budget', options: [{ v: 'budget', l: 'Il suo budget' }, { v: 'spent', l: 'La spesa effettiva' }] },
-      { id: 'round', label: 'Arrotonda la spesa effettiva alla decina di euro superiore', type: 'checkbox', value: true }
-    ],
-    onChange(v, form) { showField(form, 'round', v.what === 'spent'); },
-    submitLabel: 'Copia',
-    async onSubmit(v) {
-      const src = v.from, byCat = monthStats(src).byCat, m = {};
-      for (const c of catsOf('spesa')) {
-        let val = v.what === 'spent' ? (byCat[c.id] || 0) : monthBudget(c.id, src);
-        if (v.what === 'spent') val = v.round ? Math.ceil(val / 10) * 10 : Math.round(val);
-        m[c.id] = Math.round(val * 100) / 100;
-      }
-      const all = { ...(S.settings.budgetsMonth || {}), [ym]: m };
-      const ok = await saveSettings({ budgetsMonth: all });
-      ok && toast(`Copiato ${v.what === 'spent' ? 'la spesa effettiva' : 'il budget'} di ${ymLabel(src).toLowerCase()} in ${ymLabel(ym).toLowerCase()}`);
-      return ok;
-    }
-  });
-}
 function cleanCatsForm() {
   const list = unusedCategories();
   if (!list.length) { toast('Tutte le categorie hanno almeno un movimento.'); return; }
@@ -2213,13 +2184,6 @@ document.addEventListener('click', e => {
   if (a === 'fx-refresh') return fxRefresh(true);
   if (a === 'fx-edit') return rateForm(t.dataset.cur);
   if (a === 'fx-add') return openForm({ title: 'Aggiungi una valuta', fields: [{ id: 'cur', label: 'Valuta', type: 'select', options: curOptions().filter(o => o.v !== BASE) }], async onSubmit(v) { setTimeout(() => rateForm(v.cur), 0); return true; } });
-  if (a === 'budget-copy') return budgetCopyForm();
-  if (a === 'budget-default') {
-    const ym = S.ui.budgetMonth, nb = {};
-    catsOf('spesa').forEach(c => { const v = monthBudget(c.id, ym); if (v) nb[c.id] = v; });
-    saveSettings({ budgets: nb }).then(ok => ok && toast('Budget di ' + ymLabel(ym).toLowerCase() + ' impostati come predefiniti per i mesi senza budget specifico'));
-    return;
-  }
   if (a === 'budget-mode') { S.ui.budgetMode = t.dataset.v; render(); return; }
   if (a === 'ykey') { S.ui[t.dataset.key] = String(+S.ui[t.dataset.key] + +t.dataset.d); render(); return; }
   if (a === 'year') { S.ui.year = String(+S.ui.year + +t.dataset.d); render(); return; }
