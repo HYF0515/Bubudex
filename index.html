@@ -416,7 +416,7 @@ html{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%}
 <script>
 (() => {
 "use strict";
-const APP_VERSION = '70';
+const APP_VERSION = '71';
 /* ---------- utilità ---------- */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -1353,15 +1353,14 @@ VIEWS.budget = () => {
     return `<tr><td><div class="catname"><i class="dot" style="background:${esc(c.color)}"></i><span>${esc(c.name)}</span></div>${hasMonthOverride(c.id, ym) && (+defB[c.id] || 0) !== b ? `<small class="muted" style="display:block;font-size:.75rem">Solo per ${ymLabel(ym).toLowerCase()} · predefinito ${money0(+defB[c.id] || 0)}</small>` : ''}${+(S.settings.budgetsYear || {})[c.id] ? `<small class="muted" style="display:block;font-size:.75rem">Budget annuale ${money0(+S.settings.budgetsYear[c.id])}</small>` : ''}
       <div class="bar ${cls}" style="margin-top:8px"><i style="width:${Math.min(100, r * 100).toFixed(1)}%"></i></div></td>
       <td class="r" style="width:150px"><input class="input num" style="text-align:right" id="b-${esc(c.id)}" data-budget="${esc(c.id)}" inputmode="decimal" placeholder="—" value="${b ? String(b).replace('.', ',') : ''}" aria-label="Budget ${esc(c.name)}"></td>
-      <td class="r num">${(() => { const ps = spentIn(c.id, (+ym.slice(0, 4) - 1) + ym.slice(4)); return ps == null ? '<span class="muted">—</span>' : money(ps); })()}</td>
-      <td class="r num ${b && b - s < 0 ? 'neg' : ''}">${b ? money(b - s) : '<span class="muted">—</span>'}</td></tr>`;
+      <td class="r num">${(() => { const ps = spentIn(c.id, (+ym.slice(0, 4) - 1) + ym.slice(4)); return ps == null ? '<span class="muted">—</span>' : money(ps); })()}</td></tr>`;
   }).join('');
   return `
   <div class="head with-nav"><div><div class="eyebrow"><span class="lbl-long">Budget mensile</span><span class="lbl-short">Budget</span></div><h1>${ymLabel(ym)}</h1></div><div class="head-actions">${eyeBtn()}${monthNav('budgetMonth')}</div></div>
   <div class="budget-mode-row">${budgetModeSeg()}</div>
   ${heroCard('Budget del mese', money0(totB), [['Entrate', 'in', money0(st.inc), 'pos'], ['Speso', 'out', money0(totS), 'neg'], ['Disponibile', 'sav', money0(totB - totS), totB - totS < 0 ? 'neg' : ''], [isCur ? 'Proiezione' : 'Speso mese', 'neu', money0(projected), totB && projected > totB ? 'neg' : '']])}
   <section class="panel"><div class="panel-h"><h2>Per categoria</h2></div>
-    ${cats.length ? `<div class="tbl-wrap"><table><thead><tr><th>Categoria</th><th class="r">Budget</th><th class="r">Speso nel ${+ym.slice(0, 4) - 1}</th><th class="r">Residuo</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="empty"><p>Crea prima le categorie di spesa nelle impostazioni.</p><a class="btn" href="#impostazioni">Vai alle impostazioni</a></div>`}
+    ${cats.length ? `<div class="tbl-wrap"><table><thead><tr><th>Categoria</th><th class="r">Budget</th><th class="r">Speso nel ${+ym.slice(0, 4) - 1}</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="empty"><p>Crea prima le categorie di spesa nelle impostazioni.</p><a class="btn" href="#impostazioni">Vai alle impostazioni</a></div>`}
   </section>`;
 };
 
