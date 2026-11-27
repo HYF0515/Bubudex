@@ -259,7 +259,14 @@ body.locked .app{grid-template-columns:minmax(0,1fr)}
 
 /* Intestazioni con selettore di mese/anno: titolo e selettore sulla stessa riga anche su telefono */
 .lbl-short{display:none}
-@media (max-width:760px){ table:has([data-budget]) td:first-child .catname span{white-space:normal;overflow:visible} table:has([data-budget]) td.r[style*="width:150px"]{width:92px!important} table:has([data-budget]) th,table:has([data-budget]) td{padding-left:6px;padding-right:6px} }
+@media (max-width:760px){
+  :is(table:has([data-budget]),table:has([data-budget-year])) td:first-child .catname span{white-space:normal;overflow:visible}
+  :is(table:has([data-budget]),table:has([data-budget-year])) td.r:is([style*="width:150px"],[style*="width:160px"]){width:88px!important}
+  :is(table:has([data-budget]),table:has([data-budget-year])) :is(th,td){padding-left:4px;padding-right:4px}
+  table:has([data-budget-year]) small{white-space:normal!important}
+  :is(table:has([data-budget]),table:has([data-budget-year])) td.r input{width:80px;min-width:0;padding-left:6px;padding-right:6px}
+  table:has([data-budget-year]) th{font-size:.62rem;letter-spacing:.03em;white-space:normal}
+}
 tr.grp{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .grp-h{display:flex;justify-content:space-between;align-items:center;gap:10px}.grp-r{display:inline-flex;align-items:center;gap:8px}.grp-r b{color:var(--fg);letter-spacing:0;font-size:.85rem;text-transform:none}
 tr.grp td svg{transition:transform .2s ease}
@@ -423,7 +430,7 @@ html{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%}
 <script>
 (() => {
 "use strict";
-const APP_VERSION = '77';
+const APP_VERSION = '78';
 /* ---------- utilità ---------- */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -1373,12 +1380,27 @@ function budgetYearView() {
       <td class="r num">${money0(s)}${b ? `<br><span class="muted" style="font-size:.78rem">${pct(r)}</span>` : ''}</td>
       <td class="r num ${b && b - s < 0 ? 'neg' : ''}">${b ? money0(b - s) : '<span class="muted">—</span>'}</td></tr>`;
   }).join('');
+  // entrate previste e PAC: somma delle previsioni dei 12 mesi (si scrivono nel budget mensile)
+  const ySum = id => { let t = 0; for (let m = 1; m <= 12; m++) t += planValue(id, year + '-' + pad(m)); return t; };
+  const inCats = catsOf('entrata'), pacs = S.holdings.filter(h => pacOn(h) || [...Array(12)].some((_, i) => hasMonthOverride('pac:' + h.id, year + '-' + pad(i + 1))));
+  const roRow = (id, name, color, plan, act) => `<tr><td><div class="catname"><i class="dot" style="background:${esc(color)}"></i><span>${esc(name)}</span></div>
+      ${plan ? `<div class="bar ${act >= plan ? '' : 'near'}" style="margin-top:8px"><i style="width:${Math.min(100, act / plan * 100).toFixed(1)}%;background:var(--chart-in)"></i></div>` : ''}</td>
+      <td class="r num" style="width:160px">${plan ? money0(plan) : '<span class="muted">—</span>'}</td>
+      <td class="r num">${money0(act)}</td>
+      <td class="r num">${plan ? money0(plan - act) : '<span class="muted">—</span>'}</td></tr>`;
+  const inRows = inCats.map(c => roRow(c.id, c.name, c.color, ySum(c.id), actualIn(c.id, year) || 0)).join('');
+  const pacRows = pacs.map(h => roRow('pac:' + h.id, h.name, '#9EB9C9', ySum('pac:' + h.id), actualIn('pac:' + h.id, year) || 0)).join('');
+  const totIn = inCats.reduce((x, c) => x + ySum(c.id), 0), totPac = pacs.reduce((x, h) => x + ySum('pac:' + h.id), 0), sav = totIn - totB - totPac;
+  const gk = t => 'budget-y|grp|' + t, gf = t => !!folded[gk(t)];
+  const grp = (t, v) => `<tr class="grp" data-act="fold-grp" data-k="${esc(gk(t))}" aria-expanded="${!gf(t)}"><td colspan="4"><div class="grp-h"><span>${t}</span><span class="grp-r"><b class="num">${money0(v)}</b>${CHEV}</span></div></td></tr>`;
+  const hideIf = (t, html) => gf(t) ? '' : html;
   return `
   <div class="head with-nav"><div><div class="eyebrow"><span class="lbl-long">Budget annuale</span><span class="lbl-short">Budget</span></div><h1>Anno ${year}</h1></div><div class="head-actions">${eyeBtn()}<div class="month-nav"><button class="icon-btn" data-act="ykey" data-key="budgetYear" data-d="-1" aria-label="Anno precedente">‹</button>${yearPick('budgetYear')}<button class="icon-btn" data-act="ykey" data-key="budgetYear" data-d="1" aria-label="Anno successivo">›</button></div></div></div>
   <div class="budget-mode-row">${budgetModeSeg()}</div>
   ${(() => { const yt = yearTotals(year); return heroCard('Budget annuale', money0(totB), [['Entrate', 'in', money0(yt.inc), 'pos'], ['Speso', 'out', money0(totS), 'neg'], ['Disponibile', 'sav', money0(left), left < 0 ? 'neg' : ''], [y.isCur ? 'Proiezione' : 'Speso anno', 'neu', money0(y.isCur ? y.proj : totS), totB && (y.isCur ? y.proj : totS) > totB ? 'neg' : '']]); })()}
   <section class="panel"><div class="panel-h"><h2>Per categoria</h2></div>
-    ${cats.length ? `<div class="tbl-wrap"><table><thead><tr><th>Categoria</th><th class="r">Budget annuale</th><th class="r">Speso</th><th class="r">Residuo</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="empty"><p>Crea prima le categorie di spesa nelle impostazioni.</p></div>`}
+    ${cats.length ? `<div class="tbl-wrap"><table><thead><tr><th>Categoria</th><th class="r">Budget annuale</th><th class="r">Effettivo</th><th class="r">Residuo</th></tr></thead><tbody>${inRows ? grp('Entrate previste', totIn) + hideIf('Entrate previste', inRows) : ''}${grp('Spese', totB) + hideIf('Spese', rows)}${pacRows ? grp('Investimenti (PAC)', totPac) + hideIf('Investimenti (PAC)', pacRows) : ''}</tbody>
+      <tfoot><tr><td><b>Risparmio previsto</b><small class="muted money" style="display:block;font-size:.75rem">Entrate ${money0(totIn)} − spese ${money0(totB)}${totPac ? ' − PAC ' + money0(totPac) : ''}</small></td><td class="r num" colspan="3"><b class="${sav < 0 ? 'neg' : 'pos'}">${money0(sav)}</b></td></tr></tfoot></table></div>` : `<div class="empty"><p>Crea prima le categorie di spesa nelle impostazioni.</p></div>`}
   </section>`;
 }
 VIEWS.budget = () => {
