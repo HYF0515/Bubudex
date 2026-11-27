@@ -261,7 +261,8 @@ body.locked .app{grid-template-columns:minmax(0,1fr)}
 .lbl-short{display:none}
 @media (max-width:760px){ table:has([data-budget]) td:first-child .catname span{white-space:normal;overflow:visible} table:has([data-budget]) td.r[style*="width:150px"]{width:92px!important} table:has([data-budget]) th,table:has([data-budget]) td{padding-left:6px;padding-right:6px} }
 tr.grp{cursor:pointer;-webkit-tap-highlight-color:transparent}
-tr.grp td svg{float:right;transition:transform .2s ease}
+.grp-h{display:flex;justify-content:space-between;align-items:center;gap:10px}.grp-r{display:inline-flex;align-items:center;gap:8px}.grp-r b{color:var(--fg);letter-spacing:0;font-size:.85rem;text-transform:none}
+tr.grp td svg{transition:transform .2s ease}
 tr.grp[aria-expanded="false"] td svg{transform:rotate(-90deg)}
 tr.grp td{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:var(--surface-2);padding-top:8px;padding-bottom:8px}
 tfoot td{border-top:2px solid var(--line);padding-top:12px}
@@ -422,7 +423,7 @@ html{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%}
 <script>
 (() => {
 "use strict";
-const APP_VERSION = '76';
+const APP_VERSION = '77';
 /* ---------- utilità ---------- */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -1406,7 +1407,7 @@ VIEWS.budget = () => {
   const totIn = inCats.reduce((x, c) => x + monthBudget(c.id, ym), 0), totPac = pacs.reduce((x, h) => x + planValue('pac:' + h.id, ym), 0), sav = totIn - totB - totPac;
   // gruppi richiudibili (ricordati su questo dispositivo)
   const gk = t => 'budget|grp|' + t, gf = t => !!folded[gk(t)];
-  const grp = t => `<tr class="grp" data-act="fold-grp" data-k="${esc(gk(t))}" aria-expanded="${!gf(t)}"><td colspan="3"><span>${t}</span>${CHEV}</td></tr>`;
+  const grp = (t, v) => `<tr class="grp" data-act="fold-grp" data-k="${esc(gk(t))}" aria-expanded="${!gf(t)}"><td colspan="3"><div class="grp-h"><span>${t}</span><span class="grp-r"><b class="num">${money0(v)}</b>${CHEV}</span></div></td></tr>`;
   const hideIf = (t, html) => gf(t) ? '' : html;
   return `
   <div class="head with-nav"><div><div class="eyebrow"><span class="lbl-long">Budget mensile</span><span class="lbl-short">Budget</span></div><h1>${ymLabel(ym)}</h1></div><div class="head-actions">${eyeBtn()}${monthNav('budgetMonth')}</div></div>
@@ -1414,7 +1415,7 @@ VIEWS.budget = () => {
   ${heroCard('Budget del mese', money0(totB), [['Entrate', 'in', money0(st.inc), 'pos'], ['Speso', 'out', money0(totS), 'neg'], ['Disponibile', 'sav', money0(totB - totS), totB - totS < 0 ? 'neg' : ''], [isCur ? 'Proiezione' : 'Speso mese', 'neu', money0(projected), totB && projected > totB ? 'neg' : '']])}
   <div class="prop-actions"><button class="btn small" data-act="budget-all">Imposta per tutti i mesi</button></div>
   <section class="panel"><div class="panel-h"><h2>Per categoria</h2></div>
-    ${cats.length ? `<div class="tbl-wrap"><table><thead><tr><th>Categoria</th><th class="r">Budget</th><th class="r">Nel ${+ym.slice(0, 4) - 1}</th></tr></thead><tbody>${inRows ? grp('Entrate previste') + hideIf('Entrate previste', inRows) : ''}${grp('Spese') + hideIf('Spese', rows)}${pacRows ? grp('Investimenti (PAC)') + hideIf('Investimenti (PAC)', pacRows) : ''}</tbody>
+    ${cats.length ? `<div class="tbl-wrap"><table><thead><tr><th>Categoria</th><th class="r">Budget</th><th class="r">Nel ${+ym.slice(0, 4) - 1}</th></tr></thead><tbody>${inRows ? grp('Entrate previste', totIn) + hideIf('Entrate previste', inRows) : ''}${grp('Spese', totB) + hideIf('Spese', rows)}${pacRows ? grp('Investimenti (PAC)', totPac) + hideIf('Investimenti (PAC)', pacRows) : ''}</tbody>
       <tfoot><tr><td><b>Risparmio previsto</b><small class="muted money" style="display:block;font-size:.75rem">Entrate ${money0(totIn)} − spese ${money0(totB)}${totPac ? ' − PAC ' + money0(totPac) : ''}</small></td><td class="r num" colspan="2"><b class="${sav < 0 ? 'neg' : 'pos'}">${money0(sav)}</b></td></tr></tfoot></table></div>` : `<div class="empty"><p>Crea prima le categorie di spesa nelle impostazioni.</p><a class="btn" href="#impostazioni">Vai alle impostazioni</a></div>`}
   </section>`;
 };
