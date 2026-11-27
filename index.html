@@ -419,7 +419,7 @@ html{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%}
 <script>
 (() => {
 "use strict";
-const APP_VERSION = '74';
+const APP_VERSION = '75';
 /* ---------- utilità ---------- */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -1406,7 +1406,7 @@ VIEWS.budget = () => {
   ${heroCard('Budget del mese', money0(totB), [['Entrate', 'in', money0(st.inc), 'pos'], ['Speso', 'out', money0(totS), 'neg'], ['Disponibile', 'sav', money0(totB - totS), totB - totS < 0 ? 'neg' : ''], [isCur ? 'Proiezione' : 'Speso mese', 'neu', money0(projected), totB && projected > totB ? 'neg' : '']])}
   <div class="prop-actions"><button class="btn small" data-act="budget-all">Imposta per tutti i mesi</button></div>
   <section class="panel"><div class="panel-h"><h2>Per categoria</h2></div>
-    ${cats.length ? `<div class="tbl-wrap"><table><thead><tr><th>Categoria</th><th class="r">Budget</th><th class="r">Nel ${+ym.slice(0, 4) - 1}</th></tr></thead><tbody>${grp('Spese')}${rows}${inRows ? grp('Entrate previste') + inRows : ''}${pacRows ? grp('Investimenti (PAC)') + pacRows : ''}</tbody>
+    ${cats.length ? `<div class="tbl-wrap"><table><thead><tr><th>Categoria</th><th class="r">Budget</th><th class="r">Nel ${+ym.slice(0, 4) - 1}</th></tr></thead><tbody>${inRows ? grp('Entrate previste') + inRows : ''}${grp('Spese')}${rows}${pacRows ? grp('Investimenti (PAC)') + pacRows : ''}</tbody>
       <tfoot><tr><td><b>Risparmio previsto</b><small class="muted money" style="display:block;font-size:.75rem">Entrate ${money0(totIn)} − spese ${money0(totB)}${totPac ? ' − PAC ' + money0(totPac) : ''}</small></td><td class="r num" colspan="2"><b class="${sav < 0 ? 'neg' : 'pos'}">${money0(sav)}</b></td></tr></tfoot></table></div>` : `<div class="empty"><p>Crea prima le categorie di spesa nelle impostazioni.</p><a class="btn" href="#impostazioni">Vai alle impostazioni</a></div>`}
   </section>`;
 };
