@@ -416,7 +416,7 @@ html{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%}
 <script>
 (() => {
 "use strict";
-const APP_VERSION = '71';
+const APP_VERSION = '72';
 /* ---------- utilità ---------- */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -1459,9 +1459,7 @@ VIEWS.impostazioni = () => {
     </section>
     <section class="panel"><div class="panel-h"><h2>Importa ed esporta</h2></div>
       <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start">
-        <p class="muted" style="margin:0;font-size:.88rem">Importa l'estratto conto della tua banca in CSV o Excel: riconosco date e importi in formato italiano e salto i movimenti già presenti.</p>
         <button class="btn primary" data-act="import">Importa CSV o Excel</button>
-        <p class="muted" style="margin:6px 0 0;font-size:.88rem">Scarica un file Excel con movimenti, conti, categorie e budget, proprietà e investimenti, ognuno nel suo foglio. Oppure solo i movimenti in CSV.</p>
         <button class="btn" data-act="export-xlsx" ${typeof S.dl === 'undefined' || S.dl || !(window.claude && window.claude.use) ? '' : 'disabled title="Download non disponibile in questa vista"'}>Esporta in Excel (.xlsx)</button>
         <button class="btn" data-act="export">Esporta movimenti (CSV)</button>
       </div>
