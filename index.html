@@ -416,7 +416,7 @@ html{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%}
 <script>
 (() => {
 "use strict";
-const APP_VERSION = '72';
+const APP_VERSION = '73';
 /* ---------- utilità ---------- */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -1287,6 +1287,25 @@ function txListFiltered() {
 }
 
 // Budget di una categoria in un mese: quello specifico del mese se c'è, altrimenti il predefinito.
+// Copia i budget del mese che stai guardando su tutti i 12 mesi dello stesso anno
+function budgetAllForm() {
+  const ym = S.ui.budgetMonth, y = ym.slice(0, 4), cats = catsOf('spesa');
+  const vals = Object.fromEntries(cats.map(c => [c.id, monthBudget(c.id, ym)]));
+  const tot = Object.values(vals).reduce((a, b) => a + b, 0);
+  openForm({
+    title: 'Imposta per tutti i mesi',
+    intro: `<p style="margin:0">I budget di ${ymLabel(ym).toLowerCase()} (totale <b class="num">${money0(tot)}</b>) verranno usati per tutti i mesi del ${y}, sostituendo quelli già scritti.</p>`,
+    fields: [],
+    submitLabel: 'Imposta',
+    async onSubmit() {
+      const all = { ...(S.settings.budgetsMonth || {}) };
+      for (let m = 1; m <= 12; m++) { const k = y + '-' + pad(m); all[k] = { ...(all[k] || {}), ...vals }; }
+      const ok = await saveSettings({ budgetsMonth: all });
+      ok && toast('Budget impostati per tutti i mesi del ' + y);
+      return ok;
+    }
+  });
+}
 function monthBudget(id, ym) {
   const bm = (S.settings.budgetsMonth || {})[ym];
   if (bm && bm[id] != null) return +bm[id] || 0;
@@ -1359,6 +1378,7 @@ VIEWS.budget = () => {
   <div class="head with-nav"><div><div class="eyebrow"><span class="lbl-long">Budget mensile</span><span class="lbl-short">Budget</span></div><h1>${ymLabel(ym)}</h1></div><div class="head-actions">${eyeBtn()}${monthNav('budgetMonth')}</div></div>
   <div class="budget-mode-row">${budgetModeSeg()}</div>
   ${heroCard('Budget del mese', money0(totB), [['Entrate', 'in', money0(st.inc), 'pos'], ['Speso', 'out', money0(totS), 'neg'], ['Disponibile', 'sav', money0(totB - totS), totB - totS < 0 ? 'neg' : ''], [isCur ? 'Proiezione' : 'Speso mese', 'neu', money0(projected), totB && projected > totB ? 'neg' : '']])}
+  <div class="prop-actions"><button class="btn small" data-act="budget-all">Imposta per tutti i mesi</button></div>
   <section class="panel"><div class="panel-h"><h2>Per categoria</h2></div>
     ${cats.length ? `<div class="tbl-wrap"><table><thead><tr><th>Categoria</th><th class="r">Budget</th><th class="r">Speso nel ${+ym.slice(0, 4) - 1}</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="empty"><p>Crea prima le categorie di spesa nelle impostazioni.</p><a class="btn" href="#impostazioni">Vai alle impostazioni</a></div>`}
   </section>`;
@@ -2181,6 +2201,7 @@ document.addEventListener('click', e => {
   if (a === 'fx-refresh') return fxRefresh(true);
   if (a === 'fx-edit') return rateForm(t.dataset.cur);
   if (a === 'fx-add') return openForm({ title: 'Aggiungi una valuta', fields: [{ id: 'cur', label: 'Valuta', type: 'select', options: curOptions().filter(o => o.v !== BASE) }], async onSubmit(v) { setTimeout(() => rateForm(v.cur), 0); return true; } });
+  if (a === 'budget-all') return budgetAllForm();
   if (a === 'budget-mode') { S.ui.budgetMode = t.dataset.v; render(); return; }
   if (a === 'ykey') { S.ui[t.dataset.key] = String(+S.ui[t.dataset.key] + +t.dataset.d); render(); return; }
   if (a === 'year') { S.ui.year = String(+S.ui.year + +t.dataset.d); render(); return; }
