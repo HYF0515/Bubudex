@@ -309,6 +309,7 @@ tfoot td{border-top:2px solid var(--line);padding-top:12px}
 .hero-nw{font-size:1.9rem}
 .hero-tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .hero-tiles.t4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.bh-tile{gap:6px;padding:12px 10px}.hero .bh-tile .tag{white-space:normal;overflow:visible;text-align:center;line-height:1.2;padding:3px 8px}.bh-bar{width:100%;height:5px;margin-top:2px}.bh-s{font-size:.72rem;color:var(--hero-muted);text-align:center;line-height:1.3}.bh-s b{color:var(--hero-fg);font-weight:600}
 .hero-tiles.t2{grid-template-columns:repeat(2,minmax(0,1fr))}
 .hero .tag{white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .hero .tag.neu{background:var(--surface-2);color:var(--muted)}
@@ -430,7 +431,7 @@ html{touch-action:pan-x pan-y;-webkit-text-size-adjust:100%}
 <script>
 (() => {
 "use strict";
-const APP_VERSION = '78';
+const APP_VERSION = '79';
 /* ---------- utilità ---------- */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -1362,6 +1363,18 @@ function annualBudget(id, year = S.ui.budgetYear) {
   let t = 0; for (let m = 1; m <= 12; m++) t += monthBudget(id, year + '-' + pad(m)); return t;
 }
 const budgetModeSeg = () => `<div class="seg" role="group" aria-label="Tipo di budget" style="min-width:210px"><button type="button" data-act="budget-mode" data-v="mese" aria-pressed="${S.ui.budgetMode !== 'anno'}">Mensile</button><button type="button" data-act="budget-mode" data-v="anno" aria-pressed="${S.ui.budgetMode === 'anno'}">Annuale</button></div>`;
+// Riepilogo del budget: in grande le previsioni, sotto a ognuna l'effettivo con la barra di avanzamento
+function budgetHero(inP, inA, outP, outA, pacP, pacA) {
+  const savP = inP - outP - pacP, savA = inA - outA - pacA;
+  const tile = (label, tag, plan, act, kind) => {
+    const r = plan > 0 ? act / plan : 0, over = kind === 'out' ? r > 1 : false;
+    const color = kind === 'in' ? 'var(--pos)' : kind === 'out' ? (r > 1 ? 'var(--bar-over)' : r >= .9 ? 'var(--bar-near)' : 'var(--bar)') : (act < 0 ? 'var(--bar-over)' : 'var(--accent)');
+    return `<div class="hero-tile bh-tile"><span class="tag ${tag}">${label}</span><span class="v num ${plan < 0 ? 'neg' : ''}">${money0(plan)}</span>
+      <div class="bar bh-bar"><i style="width:${Math.max(0, Math.min(100, r * 100)).toFixed(1)}%;background:${color}"></i></div>
+      <span class="s bh-s">Effettivo <b class="num ${over || (kind === 'sav' && act < 0) ? 'neg' : ''}">${money0(act)}</b>${plan > 0 ? ` · ${pct(r)}` : ''}</span></div>`;
+  };
+  return `<section class="hero privacy"><div class="hero-tiles">${tile('Entrate previste', 'in', inP, inA, 'in')}${tile('Spese previste', 'out', outP, outA, 'out')}${tile('Risparmio previsto', 'sav', savP, savA, 'sav')}</div></section>`;
+}
 function budgetYearView() {
   const year = S.ui.budgetYear, y = yearBudget(year), cats = catsOf('spesa');
   const yb = S.settings.budgetsYear || {}, mb = S.settings.budgets || {};
@@ -1397,7 +1410,7 @@ function budgetYearView() {
   return `
   <div class="head with-nav"><div><div class="eyebrow"><span class="lbl-long">Budget annuale</span><span class="lbl-short">Budget</span></div><h1>Anno ${year}</h1></div><div class="head-actions">${eyeBtn()}<div class="month-nav"><button class="icon-btn" data-act="ykey" data-key="budgetYear" data-d="-1" aria-label="Anno precedente">‹</button>${yearPick('budgetYear')}<button class="icon-btn" data-act="ykey" data-key="budgetYear" data-d="1" aria-label="Anno successivo">›</button></div></div></div>
   <div class="budget-mode-row">${budgetModeSeg()}</div>
-  ${(() => { const yt = yearTotals(year); return heroCard('Budget annuale', money0(totB), [['Entrate', 'in', money0(yt.inc), 'pos'], ['Speso', 'out', money0(totS), 'neg'], ['Disponibile', 'sav', money0(left), left < 0 ? 'neg' : ''], [y.isCur ? 'Proiezione' : 'Speso anno', 'neu', money0(y.isCur ? y.proj : totS), totB && (y.isCur ? y.proj : totS) > totB ? 'neg' : '']]); })()}
+  ${(() => { const yt = yearTotals(year); return budgetHero(totIn, yt.inc, totB, yt.out, totPac, pacs.reduce((x, h) => x + (actualIn('pac:' + h.id, year) || 0), 0)); })()}
   <section class="panel"><div class="panel-h"><h2>Per categoria</h2></div>
     ${cats.length ? `<div class="tbl-wrap"><table><thead><tr><th>Categoria</th><th class="r">Budget annuale</th><th class="r">Effettivo</th><th class="r">Residuo</th></tr></thead><tbody>${inRows ? grp('Entrate previste', totIn) + hideIf('Entrate previste', inRows) : ''}${grp('Spese', totB) + hideIf('Spese', rows)}${pacRows ? grp('Investimenti (PAC)', totPac) + hideIf('Investimenti (PAC)', pacRows) : ''}</tbody>
       <tfoot><tr><td><b>Risparmio previsto</b><small class="muted money" style="display:block;font-size:.75rem">Entrate ${money0(totIn)} − spese ${money0(totB)}${totPac ? ' − PAC ' + money0(totPac) : ''}</small></td><td class="r num" colspan="3"><b class="${sav < 0 ? 'neg' : 'pos'}">${money0(sav)}</b></td></tr></tfoot></table></div>` : `<div class="empty"><p>Crea prima le categorie di spesa nelle impostazioni.</p></div>`}
@@ -1434,7 +1447,7 @@ VIEWS.budget = () => {
   return `
   <div class="head with-nav"><div><div class="eyebrow"><span class="lbl-long">Budget mensile</span><span class="lbl-short">Budget</span></div><h1>${ymLabel(ym)}</h1></div><div class="head-actions">${eyeBtn()}${monthNav('budgetMonth')}</div></div>
   <div class="budget-mode-row">${budgetModeSeg()}</div>
-  ${heroCard('Budget del mese', money0(totB), [['Entrate', 'in', money0(st.inc), 'pos'], ['Speso', 'out', money0(totS), 'neg'], ['Disponibile', 'sav', money0(totB - totS), totB - totS < 0 ? 'neg' : ''], [isCur ? 'Proiezione' : 'Speso mese', 'neu', money0(projected), totB && projected > totB ? 'neg' : '']])}
+  ${budgetHero(totIn, st.inc, totB, st.exp, totPac, pacs.reduce((x, h) => x + (actualIn('pac:' + h.id, ym) || 0), 0))}
   <div class="prop-actions"><button class="btn small" data-act="budget-all">Imposta per tutti i mesi</button></div>
   <section class="panel"><div class="panel-h"><h2>Per categoria</h2></div>
     ${cats.length ? `<div class="tbl-wrap"><table><thead><tr><th>Categoria</th><th class="r">Budget</th><th class="r">Nel ${+ym.slice(0, 4) - 1}</th></tr></thead><tbody>${inRows ? grp('Entrate previste', totIn) + hideIf('Entrate previste', inRows) : ''}${grp('Spese', totB) + hideIf('Spese', rows)}${pacRows ? grp('Investimenti (PAC)', totPac) + hideIf('Investimenti (PAC)', pacRows) : ''}</tbody>
